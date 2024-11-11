@@ -98,7 +98,7 @@ public class PaymentServiceImpl implements PaymentService {
 						paymentHistoryRepository.save(entity);
 					} catch (InterruptedException e) {
 						Thread.currentThread().interrupt();
-						throw new RuntimeException("Failed to acquire semaphore", e);
+						throw new RuntimeException("세마포어 획득 실패", e);
 					} finally {
 						semaphore.release();
 					}
@@ -114,7 +114,14 @@ public class PaymentServiceImpl implements PaymentService {
 
 			return CompletableFuture.allOf(saveFuture, noticeFuture, eatFuture)
 				.thenApply(v -> ResponseDto.success())
-				.join();
+       				.exceptionally(ex -> {
+               			 log.error("결제 처리 에러: {}", ex.getMessage());
+
+               			 // 보상 트랜잭션: Kafka 이벤트를 통해 롤백 처리
+                		sendRollbackEvent(entity, request.getMenuId());
+
+              			  throw new CompletionException();
+           			 }).join();
 		}, virtualThreadExecutor);
 	}
 
