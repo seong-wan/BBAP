@@ -118,7 +118,8 @@ public class PaymentServiceImpl implements PaymentService {
                			 log.error("결제 처리 에러: {}", ex.getMessage());
 
                			 // 보상 트랜잭션: Kafka 이벤트를 통해 롤백 처리
-                		sendRollbackEvent(entity, request.getMenuId());
+                                sendRollbackNotice(entity);  
+                		kafkaSend("rollback_eat_topic", String.valueOf(request.getMenuId()));
 
               			  throw new CompletionException();
            			 }).join();
