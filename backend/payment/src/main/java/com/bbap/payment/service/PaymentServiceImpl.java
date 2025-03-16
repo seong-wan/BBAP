@@ -56,25 +56,16 @@ public class PaymentServiceImpl implements PaymentService {
 	@Override
 	public CompletableFuture<ResponseEntity<ResponseDto>> payRestaurant(PayRestaurantRequestDto request) {
 		return CompletableFuture.supplyAsync(() -> {
-			log.info("Fetching employee data asynchronously");
-			System.out.println("1" + Thread.currentThread().getName());
-			System.out.println("1" + Thread.currentThread().isVirtual());
 			//cardID를 통해 사원 정보를 받아옴
 			CheckEmpResponseData empData = cacheService.getEmployeeData(request.getCardId());
 			return empData;
 
 		}, virtualThreadExecutor).thenCombineAsync(CompletableFuture.supplyAsync(() -> {
-			System.out.println("2" + Thread.currentThread().getName());
-			System.out.println("2" + Thread.currentThread().isVirtual());
-			log.info("Fetching menu data asynchronously");
 			//메뉴 정보를 받아옴
 			PayMenuResponseData menuData = cacheService.getMenuData(request.getMenuId());
 			return menuData;
 
 		}, virtualThreadExecutor), (empData, menuData) -> {
-			log.info("Combining results and processing payment");
-			System.out.println("3" + Thread.currentThread().getName());
-			System.out.println("3" + Thread.currentThread().isVirtual());
 			//사용 가능한 지원금 계산
 			int availSubsidy = calSubsidy(empData);
 
